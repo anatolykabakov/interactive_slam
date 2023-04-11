@@ -277,6 +277,10 @@ long InteractiveGraph::anchor_node_id() const {
   return anchor_node ? anchor_node->id() : -1;
 }
 
+long InteractiveGraph::anchor_edge_id() const {
+  return anchor_edge ? anchor_edge->id() : -1;
+}
+
 g2o::EdgeSE3* InteractiveGraph::add_edge(const KeyFrame::Ptr& key1, const KeyFrame::Ptr& key2, const Eigen::Isometry3d& relative_pose, const std::string& robust_kernel, double robust_kernel_delta) {
   Eigen::MatrixXd inf = inf_calclator->calc_information_matrix(key1->cloud, key2->cloud, relative_pose);
   g2o::EdgeSE3* edge = add_se3_edge(key1->node, key2->node, relative_pose, inf);

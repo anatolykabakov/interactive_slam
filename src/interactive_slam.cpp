@@ -239,6 +239,7 @@ private:
     bool merge_map_dialog = false;
     bool save_map_dialog = false;
     bool export_map_dialog = false;
+    bool recalculate_se3_edges_running = false;
     if(ImGui::BeginMenu("File")) {
       if(ImGui::BeginMenu("Open")) {
         if(ImGui::MenuItem("New map")) {
@@ -311,12 +312,19 @@ private:
         edge_refinement_window->show();
       }
 
+      if(ImGui::MenuItem("Recalculate SE3 edges")) {
+        clear_selections();
+        recalculate_se3_edges_running = true;
+      }
+
       if(ImGui::MenuItem("Optimize")) {
         graph->optimize_background(128);
       }
 
       ImGui::EndMenu();
     }
+
+    recalculate_se3_edges(recalculate_se3_edges_running);
 
     /*** Help menu ***/
     bool show_version = false;
@@ -351,6 +359,49 @@ private:
     plane_detection_window->close();
     plane_alignment_modal->close();
   }
+
+  void recalculate_se3_edges(bool running) {
+    if(progress->run("recalculate se3 edges")) {
+      graph->keyframes_view.clear();
+      graph->keyframes_view_map.clear();
+      graph->vertices_view.clear();
+      graph->vertices_view_map.clear();
+      graph->edges_view.clear();
+      graph->edges_view_map.clear();
+      graph->drawables.clear();
+    }
+
+    if (!running) {
+      return;
+    }
+
+    progress->open<bool>("recalculate se3 edges", [=](guik::ProgressInterface& progress) {
+      progress.set_text("recalculate se3 edges");
+      progress.set_maximum(graph->keyframes.size());
+
+      std::vector<g2o::EdgeSE3*> edges;
+      for (const auto& edge : graph->graph->edges()) {
+        g2o::EdgeSE3* se3_edge = dynamic_cast<g2o::EdgeSE3*>(edge);
+        bool is_anchor = graph->anchor_edge_id() == se3_edge->id();
+        if (se3_edge && !is_anchor) {
+          edges.push_back(se3_edge);
+        }
+      }
+      for (const auto& edge : edges) {
+        graph->graph->removeEdge(edge);
+      }
+
+      for (int i = 1; i < graph->keyframes.size(); ++i) {
+        const auto& prev = graph->keyframes.at(i - 1);
+        const auto& current = graph->keyframes.at(i);
+
+        graph->add_edge(graph->keyframes_view_map[prev]->lock(), graph->keyframes_view_map[current]->lock(), prev->node->estimate().inverse() * current->node->estimate());
+        progress.increment();
+      }
+      return true;
+    });
+    
+   }
 
   /**
    * @brief open map data
