@@ -18,6 +18,7 @@
 #include <hdl_graph_slam/edge_refinement_window.hpp>
 #include <hdl_graph_slam/automatic_loop_close_window.hpp>
 #include <hdl_graph_slam/view/interactive_graph_view.hpp>
+#include <hdl_graph_slam/update_graph_function.hpp>
 
 #include <ros/package.h>
 
@@ -68,6 +69,7 @@ public:
     manual_loop_close_modal.reset(new ManualLoopCloseModal(graph, data_directory));
     automatic_loop_close_window.reset(new AutomaticLoopCloseWindow(graph));
     edge_refinement_window.reset(new EdgeRefinementWindow(graph));
+    update_graph_function.reset(new UpdateGraphFunction(graph));
 
     return true;
   }
@@ -131,6 +133,7 @@ public:
     plane_detection_window->draw_ui();
     automatic_loop_close_window->draw_ui();
     edge_refinement_window->draw_ui();
+    update_graph_function->draw_ui();
 
     draw_flags_config();
     context_menu();
@@ -169,6 +172,7 @@ public:
       manual_loop_close_modal->draw_gl(*main_canvas->shader);
       automatic_loop_close_window->draw_gl(*main_canvas->shader);
       edge_refinement_window->draw_gl(*main_canvas->shader);
+      update_graph_function->draw_gl(*main_canvas->shader, draw_flags);
 
       // flush to the screen
       main_canvas->unbind();
@@ -240,6 +244,7 @@ private:
     bool save_map_dialog = false;
     bool export_map_dialog = false;
     bool recalculate_se3_edges_running = false;
+    bool update_graph_dialog = false;
     if(ImGui::BeginMenu("File")) {
       if(ImGui::BeginMenu("Open")) {
         if(ImGui::MenuItem("New map")) {
@@ -317,6 +322,11 @@ private:
         recalculate_se3_edges_running = true;
       }
 
+      if(ImGui::MenuItem("Update graph")) {
+        clear_selections();
+        update_graph_function->run();
+      }
+
       if(ImGui::MenuItem("Optimize")) {
         graph->optimize_background(128);
       }
@@ -358,6 +368,7 @@ private:
     edge_refinement_window->close();
     plane_detection_window->close();
     plane_alignment_modal->close();
+    update_graph_function->close();
   }
 
   void recalculate_se3_edges(bool running) {
@@ -784,6 +795,7 @@ private:
   std::unique_ptr<ManualLoopCloseModal> manual_loop_close_modal;
   std::unique_ptr<AutomaticLoopCloseWindow> automatic_loop_close_window;
   std::unique_ptr<EdgeRefinementWindow> edge_refinement_window;
+  std::unique_ptr<UpdateGraphFunction> update_graph_function;
 };
 
 }  // namespace hdl_graph_slam

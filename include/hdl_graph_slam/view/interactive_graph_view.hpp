@@ -111,6 +111,72 @@ public:
 
     graph->removeEdge(edge->edge);
   }
+  //Rewrite this code
+  std::vector<EdgeView::Ptr> find_connected_edges(VertexView::Ptr vertex)
+  {
+    std::vector<EdgeView::Ptr> edges_which_need_to_delete;
+    for (const auto& edge : graph->vertices()[vertex->id()]->edges()) {
+      auto edge_view = std::find_if(edges_view.begin(), edges_view.end(),
+                                    [edge](EdgeView::Ptr& edge_view) { return edge->id() == edge_view->id(); });
+      if (edge_view != edges_view.end()) {
+        edges_which_need_to_delete.push_back(*edge_view);
+      }
+    }
+    return edges_which_need_to_delete;
+  }
+
+  //Rewrite this code
+  void delete_vertex(VertexView::Ptr vertex)
+  {
+    if (anchor_node_id() == vertex->id()) {
+      return;
+    } 
+
+    std::cout << "delete vertex " << vertex->id() << std::endl;
+    auto edges_to_be_deleted = find_connected_edges(vertex);
+    for (auto& edge : edges_to_be_deleted) {
+      delete_edge(edge);
+    }
+
+
+    // auto vertex_view = std::find(vertices_view.begin(), vertices_view.end(), vertex);
+    // if (vertex_view != vertices_view.end()) {
+    //   vertices_view.erase(vertex_view);
+    // }
+
+    // auto drawable = std::find(drawables.begin(), drawables.end(), vertex);
+    // if (drawable != drawables.end()) {
+    //   drawables.erase(drawable);
+    // }
+
+    // for (auto itr = vertices_view_map.begin(); itr != vertices_view_map.end(); itr++) {
+    //   if (itr->second == vertex) {
+    //     vertices_view_map.erase(itr);
+    //     break;
+    //   }
+    // }
+
+    // keyframes.erase(vertex->id());
+
+    // if (anchor_node_id() == vertex->id()) {
+    //   reset_anchor_node();
+    // }
+
+    // if (floor_node_id() == vertex->id()) {
+    //   reset_floor_node();
+    // }
+    graph->removeVertex(graph->vertices()[vertex->id()]);
+
+    keyframes_view.clear();
+    keyframes_view_map.clear();
+    vertices_view.clear();
+    vertices_view_map.clear();
+    edges_view.clear();
+    edges_view_map.clear();
+    drawables.clear();
+    update_view();
+
+  }
 
 public:
   std::unique_ptr<LineBuffer> line_buffer;
